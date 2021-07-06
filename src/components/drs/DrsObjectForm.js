@@ -97,8 +97,8 @@ const BundleBlobRadio = (props) => {
                     Bundles contain references to Child Drs Objects, while Blobs act as single DRS Objects and do not have any children.
                 </Typography>
                 <RadioGroup name='drs_object_type' value={value} onChange={(event) => props.drsObjectFunctions.updateDrsObjectType(event.target.value)}>
-                    <FormControlLabel control={<Radio color='primary'/>} label='Blob' value='blob' disabled={props.readOnlyForm}/>
-                    <FormControlLabel control={<Radio color='primary'/>} label='Bundle' value='bundle' disabled={props.readOnlyForm}/>
+                    <FormControlLabel control={<Radio color='primary'/>} label='Blob' value='blob' disabled={props.disabled}/>
+                    <FormControlLabel control={<Radio color='primary'/>} label='Bundle' value='bundle' disabled={props.disabled}/>
                 </RadioGroup>
             </FormGroup>
         );
@@ -201,7 +201,7 @@ const MimeType = (props) => {
 /* Size is displayed for blob-type DRS Objects. This field only accepts numbers and can be edited through free-text entry or using 
 the arrow buttons in the text field. */
 const Size = (props) => {
-    if(props.isBundle|| (!props.size && props.readOnlyForm)) {
+    if(props.isBundle || (!props.size && props.readOnlyForm)) {
         return null;
     }
     else {
@@ -220,10 +220,13 @@ const Size = (props) => {
 /* Alias instances can be added or removed using the AddPropertyButton and RemovePropertyButton components, and are updated through free-text entry. */
 const Aliases = (props) => {
     let aliases = props.aliases;
-    if(!aliases) {
+    if(!aliases && props.readOnlyForm) {
         return null;
     }
     else {
+        if(!aliases) {
+            return null;
+        }
         const aliasesDisplay = aliases.map((alias, index) => {
             return (
                 <Grid item key={`alias${index}`}>
@@ -256,7 +259,7 @@ const Aliases = (props) => {
                        {aliasesDisplay}
                        <Grid item>
                             <AddPropertyButton objectName='alias' readOnlyForm={props.readOnlyForm}
-                            handleClick={() => props.drsObjectFunctions.addListItem('aliases', props.drsObjectProperties.newAlias)}/>
+                            handleClick={() => props.drsObjectFunctions.addListItem('aliases', props.drsObjectProperties.aliases)}/>
                        </Grid>
                    </Grid>
                 </FormGroup>
@@ -271,10 +274,13 @@ added before the AddPropertyButton becomes disabled, since there are 3 type opti
 const Checksums = (props) => {
     let checksums = props.checksums;
     let disableAddButton = false;
-    if(props.isBundle|| (!checksums && props.readOnlyForm)) {
+    if(props.isBundle || (!checksums && props.readOnlyForm)) {
         return null;
     }
     else {
+        if(!checksums) {
+            return null;
+        }
         if(checksums && Object.keys(checksums).length === 3) {
             disableAddButton = true;
         } 
@@ -320,7 +326,7 @@ const Checksums = (props) => {
                 <br />
                 {checksumsDisplay} 
                 <AddPropertyButton objectName='checksum' readOnlyForm={props.readOnlyForm} disabled={disableAddButton}
-                handleClick={() => props.drsObjectFunctions.addListItem('checksums', props.drsObjectProperties.newChecksum)}/>
+                handleClick={() => props.drsObjectFunctions.addListItem('checksums', props.drsObjectProperties.checksums)}/>
             </FormGroup>
         );
     }
@@ -445,7 +451,13 @@ const RelatedDrsObjectButton = (props) => {
 DRS Object is entered in the text field. If the ID is valid, the name field is automatically populated by clicking the "Verify" button. 
 Drs Object Children are only displayed for bundle-type DRS Objects. */
 const RelatedDrsObject = (props) => {
-    if(props.relationship === 'drs_object_children' && !props.isBundle) {
+    if(props.readOnlyForm && !props.relatedDrsObjects) {
+        return null;
+    }
+    else if(!props.readOnlyForm && props.relationship === 'drs_object_children' && !props.isBundle) {
+        return null;
+    }
+    /* if(props.relationship === 'drs_object_children' && !props.isBundle) {
         return null;
     }
     else if(props.relationship === 'drs_object_children' && props.readOnlyForm && !props.relatedDrsObjects) {
@@ -453,8 +465,11 @@ const RelatedDrsObject = (props) => {
     }
     else if(props.relationship === 'drs_object_parents' && !props.relatedDrsObjects){
         return null;
-    }
+    } */
     else {
+        if(!props.relatedDrsObjects) {
+            return null;
+        }
         const relatedDrsFields = props.relatedDrsObjects.map((relatedDrs, index) => {
             return (
                 <FormGroup key={props.relationship + index} row>
@@ -541,10 +556,13 @@ const AccessPoints = (props) => {
 
 const FileAccessObjects = (props) => {
     let fileAccessObjects  = props.fileAccessObjects;
-    if(!fileAccessObjects){
+    if(props.readOnlyForm && !fileAccessObjects){
         return null;
     }
     else {
+        if(!fileAccessObjects) {
+            return null;
+        }
         const fileAccessDisplay = fileAccessObjects.map((fileAccessObject, index) => {
             return (
                 <Grid container alignItems='center' spacing={4} key={`FileAccessObject${index}`}>
@@ -575,7 +593,7 @@ const FileAccessObjects = (props) => {
                 </Typography>
                 {fileAccessDisplay}
                 <AddPropertyButton objectName='local file access point' readOnlyForm={props.readOnlyForm} 
-                handleClick={() => props.drsObjectFunctions.addListItem('file_access_objects', props.drsObjectProperties.newFileAccessObject)}/>
+                handleClick={() => props.drsObjectFunctions.addListItem('file_access_objects', props.drsObjectProperties.file_access_objects)}/>
             </FormGroup>
         );
     }
@@ -583,10 +601,13 @@ const FileAccessObjects = (props) => {
 
 const AwsS3AccessObjects = (props) => {
     let awsS3AccessObjects = props.awsS3AccessObjects;
-    if(!awsS3AccessObjects) {
+    if(props.readOnlyForm && !awsS3AccessObjects) {
         return null;
     }
     else {
+        if(!awsS3AccessObjects) {
+            return null;
+        }
         const awsS3AccessDisplay = awsS3AccessObjects.map((awsS3AccessObject, index) => {
             return (
                 <FormGroup key={`AwsS3AccessObject${index}`} row>
@@ -633,7 +654,7 @@ const AwsS3AccessObjects = (props) => {
                 </Typography>
                 {awsS3AccessDisplay}
                 <AddPropertyButton objectName='AWS S3 access point' readOnlyForm={props.readOnlyForm}
-                handleClick={() => props.drsObjectFunctions.addListItem('aws_s3_access_objects', props.drsObjectProperties.newAwsS3AccessObject)}/>
+                handleClick={() => props.drsObjectFunctions.addListItem('aws_s3_access_objects', props.drsObjectProperties.aws_s3_access_objects)}/>
             </FormGroup>
         );
     }
@@ -682,19 +703,17 @@ const SubmitButton = (props) => {
     const [newDrsObjectToSubmit, setNewDrsObjectToSubmit] = useState('');
     const [error, setError] = useState(null);
     let activeDrsObject = props.activeDrsObject;
-    const scalarProperties = ['description', 'created_time', 'name', 'updated_time', 'version', 'is_bundle'] 
+    const scalarProperties = ['description', 'created_time', 'name', 'updated_time', 'version'] 
     const blobScalarProperties = ['mime_type', 'size']
     const blobListProperties = ['aliases', 'checksums', 'drs_object_parents', 'file_access_objects', 'aws_s3_access_objects'];
     const bundleListProperties = ['aliases', 'drs_object_parents', 'drs_object_children'];
 
-    let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
-    let requestUrl=(baseUrl+'objects');
     const cancelToken = axios.CancelToken;
     const newDrsCancelToken = cancelToken.source();
 
     let requestConfig = {
-        url: requestUrl,
-        method: 'POST',
+        url: props.submitRequestUrl,
+        method: props.submitRequestMethod,
         data: newDrsObjectToSubmit,
         cancelToken: newDrsCancelToken.token
     };
@@ -716,7 +735,8 @@ const SubmitButton = (props) => {
 
     const getNewDrsObject = () => {
         let newDrsObject = {
-            id: activeDrsObject.id
+            id: activeDrsObject.id, 
+            is_bundle: activeDrsObject.is_bundle
         };
 
         scalarProperties.map((property) => {
@@ -846,7 +866,7 @@ const DrsObjectForm = (props) => {
                         description='Current version of the DRS Object, it should be updated each time the DRS Object is modified.'/>
                     </Grid>
                 </Grid>
-                <BundleBlobRadio readOnlyForm={readOnlyForm} isBundle={isBundle} drsObjectFunctions={props.drsObjectFunctions}/>
+                <BundleBlobRadio readOnlyForm={readOnlyForm} isBundle={isBundle} drsObjectFunctions={props.drsObjectFunctions} disabled={props.disabledBundleBlobSelector}/>
                 <Grid container justify='flex-start' spacing={4}>
                     <MimeType mimeType={activeDrsObject.mime_type} isBundle={isBundle} readOnlyForm={readOnlyForm} drsObjectFunctions={props.drsObjectFunctions}/>
                     <Size size={activeDrsObject.size} isBundle={isBundle} readOnlyForm={readOnlyForm} drsObjectFunctions={props.drsObjectFunctions}/>
@@ -887,7 +907,8 @@ const DrsObjectForm = (props) => {
                 <AccessPoints activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} isBundle={isBundle}
                 drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}/>
                 <SubmitButton activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} 
-                drsObjectFunctions={props.drsObjectFunctions} updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}/>
+                drsObjectFunctions={props.drsObjectFunctions} updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                submitRequestUrl={props.submitRequestUrl} submitRequestMethod={props.submitRequestMethod}/>
             </form>
         </Box>
       </div>

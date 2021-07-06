@@ -17,7 +17,6 @@ import UseDrsStarterKit from '../UseDrsStarterKit';
 
 const DrsShow = (props) => {
   let activeDrsObject = props.activeDrsObject;
-  console.log(activeDrsObject);
   let setActiveDrsObject = props.drsObjectFunctions.setActiveDrsObject;
   let handleError = props.handleError;
   let { objectId } = useParams();
@@ -52,11 +51,9 @@ const DrsShow = (props) => {
           checksumTypesObject.disabled = true;
         })  
       }
-      //console.log(checksumTypes);
       newActiveDrsObject.checksumTypes = checksumTypes;
     }
-    //console.log(newActiveDrsObject);
-    setActiveDrsObject(newActiveDrsObject)
+    setActiveDrsObject(newActiveDrsObject);
   }
 
   UseDrsStarterKit(requestConfig, updateNewDrsObject, handleError, objectId, drsCancelToken);
@@ -78,13 +75,17 @@ const DrsShow = (props) => {
         <Grid container justify='space-between' alignItems='center'>
           <Grid item xs={2} align='left'>
             <Button variant='contained' component={Link} to='/drs' color='primary' size='large'>
-            <Typography variant='button'>DRS Index</Typography>
+              <Typography variant='button'>DRS Index</Typography>
             </Button>
           </Grid>
           <Grid item xs={8}>
             <Typography variant="h3" gutterBottom>DRS Object Details</Typography>
           </Grid>
-          <Grid item xs={2}/>
+          <Grid item xs={2} align='right'>
+            <Button variant='contained' component={Link} to={`/drs/${activeDrsObject.id}/edit`} color='primary' size='large'>
+              <Typography variant='button'>Edit</Typography>
+            </Button>
+          </Grid>
         </Grid>
         <DrsObjectForm 
           activeDrsObject={activeDrsObject} 

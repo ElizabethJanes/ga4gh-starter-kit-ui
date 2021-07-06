@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import DrsIndex from './pages/DrsIndex';
 import DrsShow from './pages/DrsShow';
 import NewDrs from './pages/NewDrs';
+import EditDrs from './pages/EditDrs';
 
 let newDate = new Date();
 newDate.setSeconds(0, 0);
@@ -25,7 +26,6 @@ class Drs extends React.Component {
   constructor(props) {
     super(props);
     this.getDrsObjectsList = this.getDrsObjectsList.bind(this);
-    this.resetActiveDrsObject = this.resetActiveDrsObject.bind(this);
     this.handleError = this.handleError.bind(this);
     this.updateSubmitNewDrsRedirect = this.updateSubmitNewDrsRedirect.bind(this);
     this.state = {
@@ -80,8 +80,8 @@ class Drs extends React.Component {
       updateValidRelatedDrsObjects: (property) => this.updateValidRelatedDrsObjects(property)
     };
     this.drsObjectProperties = {
-      newAlias: '',
-      newChecksum: {
+      aliases: '',
+      checksums: {
         checksum: '',
         type: ''
       },
@@ -90,10 +90,20 @@ class Drs extends React.Component {
         name: '', 
         isValid: undefined
       },
-      newFileAccessObject: {
+      drs_object_children: {
+        id: '', 
+        name: '', 
+        isValid: undefined
+      },
+      drs_object_parents: {
+        id: '', 
+        name: '', 
+        isValid: undefined
+      },
+      file_access_objects: {
         path: ''
       },
-      newAwsS3AccessObject: {
+      aws_s3_access_objects: {
         region: '',
         bucket: '',
         key: ''
@@ -120,49 +130,6 @@ class Drs extends React.Component {
     )
   }
 
-  resetActiveDrsObject = () => {
-    let newDate = new Date();
-    newDate.setSeconds(0, 0);
-    let year = newDate.getUTCFullYear();
-    let month = newDate.getUTCMonth();
-    let date = newDate.getUTCDate();
-    let hours = newDate.getUTCHours();
-    let minutes = newDate.getUTCMinutes();
-    let seconds = newDate.getUTCSeconds();
-    this.setState({
-      activeDrsObject: {
-        id: '',
-        description: '',
-        created_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        mime_type: '',
-        name: '',
-        size: '',
-        updated_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        version: '',
-        aliases: [],
-        checksums: [],
-        drs_object_children: [],
-        drs_object_parents: [],
-        file_access_objects: [],
-        aws_s3_access_objects: [],
-        is_bundle: false,
-        checksumTypes: {
-          md5: {
-            disabled: false
-          },
-          sha1: {
-            disabled: false
-          },
-          sha256: {
-            disabled: false
-          }
-        },
-        validId: false,
-        validRelatedDrsObjects: true
-      }
-    })
-  }
-
   componentDidMount() {
     if(!this.state.drsObjectsList) {
       this.getDrsObjectsList();
@@ -178,14 +145,9 @@ class Drs extends React.Component {
       /* On navigation to the Index Page, update the Drs Objects list, reset the activeDrsObject, and reset the the state of submitNewDrsRedirect. */
       if(this.props.location.pathname === '/drs' && this.state.path !== this.state.prevPath) {
         this.getDrsObjectsList();
-        this.resetActiveDrsObject();
         this.setState({
           submitNewDrsRedirect: false
         })
-      }
-      /* On navigation to the New DRS Page, reset the activeDrsObject. */
-      if(this.props.location.pathname === '/drs/new' && this.state.path !== this.state.prevPath) {
-        this.resetActiveDrsObject();
       }
     }
   }
@@ -197,9 +159,11 @@ class Drs extends React.Component {
   }
 
   setActiveDrsObject(newActiveDrsObject) {
+    console.log(newActiveDrsObject);
     this.setState({
       activeDrsObject: newActiveDrsObject
     });
+    console.log(this.state.activeDrsObject);
   }
 
   updateDrsObjectType(value) {
@@ -323,9 +287,10 @@ class Drs extends React.Component {
     if(activeDrsObject[property]) {
       activeDrsObject[property].map((relatedDrs) => {
         if(relatedDrs.isValid === false) {
+          console.log('set false');
           activeDrsObject.validRelatedDrsObjects = false;
         }
-      })  
+      })
     }
     this.setState({
       activeDrsObject: activeDrsObject
@@ -400,11 +365,18 @@ class Drs extends React.Component {
                 />
               }
             </Route>
-            <Route path='/drs/:objectId'>
+            <Route exact path='/drs/:objectId'>
               <DrsShow 
                 activeDrsObject={this.state.activeDrsObject} 
                 handleError={this.handleError}
                 drsObjectFunctions={this.drsObjectFunctions}
+              />
+            </Route>
+            <Route exact path='/drs/:objectId/edit'>
+              <EditDrs 
+                activeDrsObject={this.state.activeDrsObject}
+                drsObjectFunctions={this.drsObjectFunctions}
+                drsObjectProperties={this.drsObjectProperties}
               />
             </Route>
           </Switch>
