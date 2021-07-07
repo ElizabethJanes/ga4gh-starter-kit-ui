@@ -67,6 +67,7 @@ class Drs extends React.Component {
     };
     this.drsObjectFunctions = {
       setActiveDrsObject: (newActiveDrsObject) => this.setActiveDrsObject(newActiveDrsObject),
+      setEditableDrsObject: (drsObject) => this.setEditableDrsObject(drsObject),
       updateDrsObjectType: (value) => this.updateDrsObjectType(value),
       updateScalarProperty: (property, newValue) => this.updateScalarProperty(property, newValue), 
       addListItem: (property, newObject) => this.addListItem(property, newObject),
@@ -75,6 +76,7 @@ class Drs extends React.Component {
       updateId: (newValue) => this.updateId(newValue),
       updateAlias: (index, newValue) => this.updateAlias(index, newValue),
       removeAlias: (index) => this.removeAlias(index),
+      setChecksumTypes: (drsObject) => this.setChecksumTypes(drsObject),
       updateChecksumType: (index, newValue) => this.updateChecksumType(index, newValue),
       removeChecksumItem: (index) => this.removeChecksumItem(index),
       updateValidRelatedDrsObjects: (property) => this.updateValidRelatedDrsObjects(property)
@@ -159,11 +161,62 @@ class Drs extends React.Component {
   }
 
   setActiveDrsObject(newActiveDrsObject) {
-    console.log(newActiveDrsObject);
     this.setState({
       activeDrsObject: newActiveDrsObject
     });
-    console.log(this.state.activeDrsObject);
+  }
+
+  setEditableDrsObject(drsObject) {
+    console.log('editable drs object effect');
+    const scalarProperties = ['description', 'created_time', 'name', 'updated_time', 'version'] 
+    const blobScalarProperties = ['mime_type', 'size']
+    const blobListProperties = ['aliases', 'checksums', 'drs_object_parents', 'file_access_objects', 'aws_s3_access_objects'];
+    const bundleListProperties = ['aliases', 'drs_object_parents', 'drs_object_children'];
+
+    if(drsObject.id) {
+        drsObject.validId = true;
+    }
+    else {
+        drsObject.validId = false;
+    }
+
+    if(drsObject.drs_object_children) {
+        drsObject.drs_object_children.forEach((drsObjectChild) => {
+            drsObjectChild.isValid = true;
+        }) 
+    }
+    if(drsObject.drs_object_parents) {
+        drsObject.drs_object_parents.forEach((drsObjectParent) => {
+            drsObjectParent.isValid = true;
+        })   
+    }
+    drsObject.validRelatedDrsObjects = true;
+
+    scalarProperties.forEach((scalarProperty) => {
+      if(!drsObject[scalarProperty]) {
+        drsObject[scalarProperty] = '';
+      }
+    })
+    if(!drsObject.is_bundle) {
+      blobScalarProperties.forEach((blobScalarProperty) => {
+        if(!drsObject[blobScalarProperty]) {
+          drsObject[blobScalarProperty] = '';
+        }
+      })
+      blobListProperties.forEach((blobListProperty) => {
+        if(!drsObject[blobListProperty]) {
+          drsObject[blobListProperty] = [];
+        }
+      })
+    }
+    if(drsObject.is_bundle) {
+      bundleListProperties.forEach((bundleListProperty) => {
+        if(!drsObject[bundleListProperty]) {
+          drsObject[bundleListProperty] = [];
+        }
+      })
+    }
+    this.setChecksumTypes(drsObject);
   }
 
   updateDrsObjectType(value) {
@@ -247,6 +300,33 @@ class Drs extends React.Component {
     })
   }
 
+  setChecksumTypes = (drsObject) => {
+    if(!drsObject.is_bundle) {
+      let checksumTypes = {
+        md5: {
+          disabled: false
+        },
+        sha1: {
+          disabled: false
+        },
+        sha256: {
+          disabled: false
+        }
+      };
+      if(drsObject.checksums) {
+        drsObject.checksums.map((checksum) =>  {
+          let type = checksum.type;
+          let checksumTypesObject = checksumTypes[type];
+          checksumTypesObject.disabled = true;
+        })  
+      }
+      drsObject.checksumTypes = checksumTypes;
+    }
+    this.setState({
+      activeDrsObject: drsObject
+    })
+  }
+
   updateChecksumType(index, newValue) {
     let activeDrsObject = {...this.state.activeDrsObject};
     let objectList = activeDrsObject['checksums'];
@@ -287,7 +367,6 @@ class Drs extends React.Component {
     if(activeDrsObject[property]) {
       activeDrsObject[property].map((relatedDrs) => {
         if(relatedDrs.isValid === false) {
-          console.log('set false');
           activeDrsObject.validRelatedDrsObjects = false;
         }
       })
@@ -373,11 +452,15 @@ class Drs extends React.Component {
               />
             </Route>
             <Route exact path='/drs/:objectId/edit'>
-              <EditDrs 
-                activeDrsObject={this.state.activeDrsObject}
-                drsObjectFunctions={this.drsObjectFunctions}
-                drsObjectProperties={this.drsObjectProperties}
-              />
+              {this.state.submitNewDrsRedirect ? <Redirect from='/drs/:objectId/edit' to='/drs' /> :
+                <EditDrs 
+                  activeDrsObject={this.state.activeDrsObject}
+                  drsObjectFunctions={this.drsObjectFunctions}
+                  drsObjectProperties={this.drsObjectProperties}
+                  handleError={this.handleError}
+                  updateSubmitNewDrsRedirect={this.updateSubmitNewDrsRedirect}
+                />
+              }
             </Route>
           </Switch>
         </div>

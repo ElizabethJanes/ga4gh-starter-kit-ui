@@ -774,7 +774,6 @@ const SubmitButton = (props) => {
                 }
             })
         }
-        console.log(newDrsObject); 
         return newDrsObject;   
     }
 

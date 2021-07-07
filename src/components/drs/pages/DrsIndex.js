@@ -10,12 +10,14 @@ import {
   TableRow, 
   TableCell, 
   Button, 
-  Grid
+  Grid, 
+  IconButton
 } from '@material-ui/core';
 import {
   Link, 
   useLocation
 } from "react-router-dom";
+import EditIcon from '@material-ui/icons/Edit';
 
   /* Render index table rows populated with data */
 const DrsIndexRows = (props) => {
@@ -32,10 +34,15 @@ const DrsIndexRows = (props) => {
       <TableCell align="left">
         <Typography>{drsObject.name}</Typography>
       </TableCell>
-      <TableCell align="right">
+      <TableCell align="center">
         <Button variant="contained" color='default' component={Link} to={`/drs/${drsObject.id}`}>
-          <Typography variant="button">View Details</Typography>
+          <Typography variant="button">Details</Typography>
         </Button>
+      </TableCell>
+      <TableCell align="center">
+        <IconButton variant="contained" color='primary' component={Link} to={`/drs/${drsObject.id}/edit`}>
+          <EditIcon/>
+        </IconButton>
       </TableCell>
     </TableRow>
     );
@@ -87,8 +94,11 @@ const DrsIndex = (props) => {
                 <TableCell align="left">
                   <Typography variant="h5">Name</Typography>
                 </TableCell>
-                <TableCell align="right">
-                  <Typography variant="h5">View DRS Object Details</Typography>
+                <TableCell align="center">
+                  <Typography variant="h5">View Details</Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="h5">Edit</Typography>
                 </TableCell>
               </TableRow>
             </TableHead>

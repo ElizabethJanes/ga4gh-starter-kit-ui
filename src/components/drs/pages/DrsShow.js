@@ -11,52 +11,28 @@ import {
     useLocation, 
     Link
 } from "react-router-dom";
-import DrsObjectForm from '../DrsObjectForm';
 import axios from 'axios';
+import DrsObjectForm from '../DrsObjectForm';
 import UseDrsStarterKit from '../UseDrsStarterKit';
+import EditIcon from '@material-ui/icons/Edit';
 
 const DrsShow = (props) => {
   let activeDrsObject = props.activeDrsObject;
-  let setActiveDrsObject = props.drsObjectFunctions.setActiveDrsObject;
-  let handleError = props.handleError;
+  let setChecksumTypes = props.drsObjectFunctions.setChecksumTypes;
   let { objectId } = useParams();
   let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
   let requestUrl=(baseUrl+'objects/'+objectId);
   const cancelToken = axios.CancelToken;
   const drsCancelToken = cancelToken.source();
 
+  /* GET request to set the activeDrsObject and populate DrsShow page */
   let requestConfig = {
     url: requestUrl,
     method: 'GET',
     cancelToken: drsCancelToken.token
   };
 
-  const updateNewDrsObject = (newActiveDrsObject) => {
-    if(!newActiveDrsObject.is_bundle) {
-      let checksumTypes = {
-        md5: {
-          disabled: false
-        },
-        sha1: {
-          disabled: false
-        },
-        sha256: {
-          disabled: false
-        }
-      };
-      if(newActiveDrsObject.checksums) {
-        newActiveDrsObject.checksums.map((checksum) =>  {
-          let type = checksum.type;
-          let checksumTypesObject = checksumTypes[type];
-          checksumTypesObject.disabled = true;
-        })  
-      }
-      newActiveDrsObject.checksumTypes = checksumTypes;
-    }
-    setActiveDrsObject(newActiveDrsObject);
-  }
-
-  UseDrsStarterKit(requestConfig, updateNewDrsObject, handleError, objectId, drsCancelToken);
+  UseDrsStarterKit(requestConfig, setChecksumTypes, props.handleError, objectId, drsCancelToken);
 
   /* Restore scroll to top of page on navigation to a new page */
   const { pathname }  = useLocation();
@@ -82,7 +58,7 @@ const DrsShow = (props) => {
             <Typography variant="h3" gutterBottom>DRS Object Details</Typography>
           </Grid>
           <Grid item xs={2} align='right'>
-            <Button variant='contained' component={Link} to={`/drs/${activeDrsObject.id}/edit`} color='primary' size='large'>
+            <Button variant='contained' component={Link} to={`/drs/${activeDrsObject.id}/edit`} color='primary' size='large' endIcon={<EditIcon/>}>
               <Typography variant='button'>Edit</Typography>
             </Button>
           </Grid>

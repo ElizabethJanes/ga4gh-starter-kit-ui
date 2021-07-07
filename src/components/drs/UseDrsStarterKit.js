@@ -21,6 +21,13 @@ const makeRequest = async (requestConfig, handleResponse, handleError) => {
     )
   } 
 
+  /* UseDrsStarterKit is a custom hook used to make API requests. 
+  Parameters:
+    requestConfig: a JSON object specifying the API request to be made
+    handleResponse: a function that handles the response.data object returned from the API request
+    handleError: a function that handles an error that could be returned from the API request if it is unsuccessful
+    requestUpdateParameter: a parameter related to the API request, such that when this parameter changes, the API request will be updated
+    cancelToken: an axios cancel token used to cancel the request if needed */
 const UseDrsStarterKit = (requestConfig, handleResponse, handleError, requestUpdateParameter, cancelToken) => {
     useEffect(() => {    
         if(requestUpdateParameter){

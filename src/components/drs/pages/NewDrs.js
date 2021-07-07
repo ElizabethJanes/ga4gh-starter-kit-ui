@@ -12,16 +12,14 @@ import {
 } from "react-router-dom";
 import { format } from 'date-fns';
 
-/* Render NewDrs page */
 const NewDrs = (props) => {
     let activeDrsObject = props.activeDrsObject;
     console.log(activeDrsObject);
-
     let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
     let requestUrl=(baseUrl+'objects');
 
+    /* Upon rendering the NewDrs page, reset the activeDrsObject with useEffect hook */
     useEffect(() => {
-        console.log('new drs object effect');
         let newDate = new Date();
         newDate.setSeconds(0, 0);
         let year = newDate.getUTCFullYear();
@@ -63,6 +61,7 @@ const NewDrs = (props) => {
         props.drsObjectFunctions.setActiveDrsObject(newDrsObject);
     }, [])
 
+    /* Render NewDrs page */
     return (
         <div>
             <meta

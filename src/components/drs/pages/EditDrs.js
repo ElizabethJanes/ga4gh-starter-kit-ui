@@ -1,112 +1,127 @@
 import '@fontsource/roboto';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import { 
     Typography, 
     Container, 
     Grid, 
-    Button
+    Button, 
+    Dialog, 
+    DialogTitle, 
+    DialogContent, 
+    DialogContentText, 
+    DialogActions
 } from '@material-ui/core';
-import DrsObjectForm from '../DrsObjectForm';
+import DeleteIcon from '@material-ui/icons/Delete';
 import {
-    Link
+  useParams,
+  useLocation,
+  Link
 } from "react-router-dom";
+import axios from 'axios';
+import DrsObjectForm from '../DrsObjectForm';
 import UseDrsStarterKit from '../UseDrsStarterKit';
 
 const EditDrs = (props) => {
-    console.log('edit page');
-    console.log(props.activeDrsObject);
+  console.log(props.activeDrsObject);
+  let { objectId } = useParams();
+  let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
+  let requestUrl=(baseUrl+'objects/'+objectId);
+  const cancelToken = axios.CancelToken;
+  const drsCancelToken = cancelToken.source();
 
-    let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
-    let requestUrl=(baseUrl+'objects/'+props.activeDrsObject.id);
+  /* Restore scroll to top of page on navigation to a new page */
+  const { pathname }  = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname])
 
-    useEffect(() => {
-        console.log('editable drs object');
-        let activeDrsObject = {...props.activeDrsObject}
-        const scalarProperties = ['description', 'created_time', 'name', 'updated_time', 'version'] 
-        const blobScalarProperties = ['mime_type', 'size']
-        const blobListProperties = ['aliases', 'checksums', 'drs_object_parents', 'file_access_objects', 'aws_s3_access_objects'];
-        const bundleListProperties = ['aliases', 'drs_object_parents', 'drs_object_children'];
+  /* GET request to set the activeDrsObject and populate EditDrs page */
+  let getRequestConfig = {
+    url: requestUrl,
+    method: 'GET',
+    cancelToken: drsCancelToken.token
+  };
 
-        if(activeDrsObject.id) {
-            activeDrsObject.validId = true;
-        }
-        else {
-            activeDrsObject.validId = false;
-        }
+  UseDrsStarterKit(getRequestConfig, props.drsObjectFunctions.setEditableDrsObject, props.handleError, objectId, drsCancelToken);
 
-        if(activeDrsObject.drs_object_children) {
-            activeDrsObject.drs_object_children.forEach((drsObjectChild) => {
-                drsObjectChild.isValid = true;
-            }) 
-        }
-        if(activeDrsObject.drs_object_parents) {
-            activeDrsObject.drs_object_parents.forEach((drsObjectParent) => {
-                drsObjectParent.isValid = true;
-            })   
-        }
-        activeDrsObject.validRelatedDrsObjects = true;
+  /* DELETE request to remove activeDrsObject */
+  const [objectIdToDelete, setObjectIdToDelete] = useState('');
 
-        scalarProperties.forEach((scalarProperty) => {
-          if(!activeDrsObject[scalarProperty]) {
-            activeDrsObject[scalarProperty] = '';
-          }
-        })
-        if(!activeDrsObject.is_bundle) {
-          blobScalarProperties.forEach((blobScalarProperty) => {
-            if(!activeDrsObject[blobScalarProperty]) {
-              activeDrsObject[blobScalarProperty] = '';
-            }
-          })
-          blobListProperties.forEach((blobListProperty) => {
-            if(!activeDrsObject[blobListProperty]) {
-              activeDrsObject[blobListProperty] = [];
-            }
-          })
-        }
-        if(activeDrsObject.is_bundle) {
-          bundleListProperties.forEach((bundleListProperty) => {
-            if(!activeDrsObject[bundleListProperty]) {
-              activeDrsObject[bundleListProperty] = [];
-            }
-          })
-        }
-        console.log(activeDrsObject);
-        props.drsObjectFunctions.setActiveDrsObject(activeDrsObject);
-    }, [])
+  let deleteRequestConfig = {
+    url: requestUrl,
+    method: 'DELETE',
+    cancelToken: drsCancelToken.token
+  }
 
-    return (
-        <div>
-            <meta
-                name="viewport"
-                content="minimum-scale=1, initial-scale=1, width=device-width"
-            />
-            <Container maxWidth='lg'>
-                <Grid container justify='space-between' alignItems='center'>
-                    <Grid item xs={2} align='left'>
-                        
-                    </Grid>
-                    <Grid item xs={8}>
-                        <Typography align='center' variant="h3" gutterBottom>Edit DRS Object</Typography>
-                    </Grid>
-                    <Grid item xs={2} align='right'>
-                        <Button variant='contained' component={Link} to={`/drs/${props.activeDrsObject.id}`} color='primary' size='large'>
+  const handleDeleteResponse = (response)  => {
+    console.log(response);
+    props.updateSubmitNewDrsRedirect(true);
+  }
+
+  UseDrsStarterKit(deleteRequestConfig, handleDeleteResponse, props.handleError, objectIdToDelete, drsCancelToken);
+
+  /* Render EditDrs page */
+  const [dialogIsOpen, setDialogIsOpen] = useState(false);
+  const closeDialog = () => {
+    setDialogIsOpen(false);
+  }
+  const deleteDrsObject = () => {
+    setObjectIdToDelete(props.activeDrsObject.id);
+    setDialogIsOpen(false);
+  }
+
+  return (
+      <div>
+          <meta
+              name="viewport"
+              content="minimum-scale=1, initial-scale=1, width=device-width"
+          />
+          <Container maxWidth='lg'>
+              <Grid container justify='space-between' alignItems='center'>
+                  <Grid item xs={2} align='left'>
+                      <Button variant='contained' color='secondary' endIcon={<DeleteIcon/>} onClick={() => setDialogIsOpen(true)}>
+                        <Typography variant='button'>Delete</Typography>
+                      </Button>
+                      <Dialog open={dialogIsOpen} onClose={closeDialog}>
+                        <DialogTitle align='center'>Are you sure you want to delete the DRS Object?</DialogTitle>
+                        <DialogContent>
+                          <DialogContentText align='center'>
+                            Deleting this DRS Object will permanently remove it from the database.
+                          </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                          <Button variant='contained' color='primary' onClick={closeDialog}>
                             <Typography variant='button'>Cancel</Typography>
-                        </Button>
-                    </Grid>
-                </Grid>
-                <DrsObjectForm 
-                    activeDrsObject={props.activeDrsObject} 
-                    readOnlyId={true}
-                    readOnlyForm={false}
-                    disabledBundleBlobSelector={true}
-                    drsObjectFunctions={props.drsObjectFunctions}
-                    drsObjectProperties={props.drsObjectProperties}
-                    submitRequestUrl={requestUrl}
-                    submitRequestMethod={'PUT'}
-                />
-            </Container>
-        </div>
-    ); 
+                          </Button>
+                          <Button variant='contained' color='primary' onClick={deleteDrsObject}>
+                            <Typography variant='button'>Delete</Typography>
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
+                  </Grid>
+                  <Grid item xs={8}>
+                      <Typography align='center' variant="h3" gutterBottom>Edit DRS Object</Typography>
+                  </Grid>
+                  <Grid item xs={2} align='right'>
+                      <Button variant='contained' component={Link} to={`/drs/${props.activeDrsObject.id}`} color='primary' size='large'>
+                          <Typography variant='button'>Cancel</Typography>
+                      </Button>
+                  </Grid>
+              </Grid>
+              <DrsObjectForm 
+                  activeDrsObject={props.activeDrsObject} 
+                  readOnlyId={true}
+                  readOnlyForm={false}
+                  disabledBundleBlobSelector={true}
+                  drsObjectFunctions={props.drsObjectFunctions}
+                  drsObjectProperties={props.drsObjectProperties}
+                  submitRequestUrl={requestUrl}
+                  submitRequestMethod={'PUT'}
+                  updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+              />
+          </Container>
+      </div>
+  ); 
 }
 
 export default EditDrs;
