@@ -55,7 +55,6 @@ const NewDrs = (props) => {
                 disabled: false
             }
             },
-            validId: false,
             validRelatedDrsObjects: true
         }
         props.drsObjectFunctions.setActiveDrsObject(newDrsObject);
@@ -90,6 +89,7 @@ const NewDrs = (props) => {
                     submitRequestUrl={requestUrl}
                     submitRequestMethod={'POST'}
                     updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                    apiRequest={props.apiRequest}
                 />
             </Container>
         </div>

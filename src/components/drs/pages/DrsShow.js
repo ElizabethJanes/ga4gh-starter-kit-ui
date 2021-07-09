@@ -67,7 +67,8 @@ const DrsShow = (props) => {
           activeDrsObject={activeDrsObject} 
           readOnlyId={true}
           readOnlyForm={true}
-          drsObjectFunctions={props.drsObjectFunctions}/>
+          drsObjectFunctions={props.drsObjectFunctions}
+          apiRequest={props.apiRequest}/>
       </Container>
     </div>
   );

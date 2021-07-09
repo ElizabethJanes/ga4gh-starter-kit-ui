@@ -20,6 +20,7 @@ import {
 import axios from 'axios';
 import DrsObjectForm from '../DrsObjectForm';
 import UseDrsStarterKit from '../UseDrsStarterKit';
+import { format } from 'date-fns';
 
 const EditDrs = (props) => {
   console.log(props.activeDrsObject);
@@ -42,10 +43,62 @@ const EditDrs = (props) => {
     cancelToken: drsCancelToken.token
   };
 
-  UseDrsStarterKit(getRequestConfig, props.drsObjectFunctions.setEditableDrsObject, props.handleError, objectId, drsCancelToken);
+  const handleResponse = (drsObject) => { 
+    let editableDrsObject = props.drsObjectFunctions.getEditableDrsObject(drsObject);
+    props.drsObjectFunctions.setActiveDrsObject(editableDrsObject);
+  }
+
+  /* UseDrsStarterKit hook makes GET request when path changes to EditDrs page */
+  //UseDrsStarterKit(getRequestConfig, handleResponse, props.handleError, objectId, drsCancelToken);
+  useEffect(() => {
+    let newDate = new Date();
+    newDate.setSeconds(0, 0);
+    let year = newDate.getUTCFullYear();
+    let month = newDate.getUTCMonth();
+    let date = newDate.getUTCDate();
+    let hours = newDate.getUTCHours();
+    let minutes = newDate.getUTCMinutes();
+    let seconds = newDate.getUTCSeconds();
+    let temporaryDrs = {
+      id: '',
+      description: '',
+      created_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+      mime_type: '',
+      name: '',
+      size: '',
+      updated_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+      version: '',
+      aliases: [],
+      checksums: [],
+      drs_object_children: [],
+      drs_object_parents: [],
+      file_access_objects: [],
+      aws_s3_access_objects: [],
+      is_bundle: false,
+      checksumTypes: {
+        md5: {
+          disabled: false
+        },
+        sha1: {
+          disabled: false
+        },
+        sha256: {
+          disabled: false
+        }
+      },
+      validRelatedDrsObjects: true
+    }
+    props.drsObjectFunctions.setActiveDrsObject(temporaryDrs);
+    if(objectId){
+      props.apiRequest(getRequestConfig, handleResponse, props.handleError);
+    }
+    return () => {
+      drsCancelToken.cancel('Cleanup API Request');
+    };
+  }, []);
 
   /* DELETE request to remove activeDrsObject */
-  const [objectIdToDelete, setObjectIdToDelete] = useState('');
+  const [objectIdToDelete, setObjectIdToDelete] = useState(null);
 
   let deleteRequestConfig = {
     url: requestUrl,
@@ -54,22 +107,34 @@ const EditDrs = (props) => {
   }
 
   const handleDeleteResponse = (response)  => {
-    console.log(response);
+    setObjectIdToDelete(null);
     props.updateSubmitNewDrsRedirect(true);
   }
 
-  UseDrsStarterKit(deleteRequestConfig, handleDeleteResponse, props.handleError, objectIdToDelete, drsCancelToken);
+  /* Error dialog  */
+  const [errorDialogIsOpen, setErrorDialogIsOpen] = useState(false);
+  const closeErrorDialog = () => {
+    setErrorDialogIsOpen(false);
+  }
+  const handleDeleteError = () => {
+    setConfirmationDialogIsOpen(false);
+    setErrorDialogIsOpen(true);
+  }
 
-  /* Render EditDrs page */
-  const [dialogIsOpen, setDialogIsOpen] = useState(false);
-  const closeDialog = () => {
-    setDialogIsOpen(false);
+  /* Confirmation dialog  */
+  const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+  const closeConfirmationDialog = () => {
+    setConfirmationDialogIsOpen(false);
   }
   const deleteDrsObject = () => {
     setObjectIdToDelete(props.activeDrsObject.id);
-    setDialogIsOpen(false);
+    setConfirmationDialogIsOpen(false);
   }
 
+  /* UseDrsStarterKit hook makes DELETE request when objectIdToDelete is set by clicking "Delete" button in confirmation dialog */
+  UseDrsStarterKit(deleteRequestConfig, handleDeleteResponse, handleDeleteError, objectIdToDelete, drsCancelToken);
+
+  /* Render EditDrs page */
   return (
       <div>
           <meta
@@ -79,10 +144,10 @@ const EditDrs = (props) => {
           <Container maxWidth='lg'>
               <Grid container justify='space-between' alignItems='center'>
                   <Grid item xs={2} align='left'>
-                      <Button variant='contained' color='secondary' endIcon={<DeleteIcon/>} onClick={() => setDialogIsOpen(true)}>
+                      <Button variant='contained' color='secondary' endIcon={<DeleteIcon/>} onClick={() => setConfirmationDialogIsOpen(true)}>
                         <Typography variant='button'>Delete</Typography>
                       </Button>
-                      <Dialog open={dialogIsOpen} onClose={closeDialog}>
+                      <Dialog open={confirmationDialogIsOpen} onClose={closeConfirmationDialog}>
                         <DialogTitle align='center'>Are you sure you want to delete the DRS Object?</DialogTitle>
                         <DialogContent>
                           <DialogContentText align='center'>
@@ -90,11 +155,24 @@ const EditDrs = (props) => {
                           </DialogContentText>
                         </DialogContent>
                         <DialogActions>
-                          <Button variant='contained' color='primary' onClick={closeDialog}>
+                          <Button variant='contained' color='primary' onClick={closeConfirmationDialog}>
                             <Typography variant='button'>Cancel</Typography>
                           </Button>
                           <Button variant='contained' color='primary' onClick={deleteDrsObject}>
                             <Typography variant='button'>Delete</Typography>
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
+                      <Dialog open={errorDialogIsOpen} onClose={closeErrorDialog}>
+                        <DialogTitle align='center'>DRS Object was not deleted successfully.</DialogTitle>
+                        <DialogContent>
+                          <DialogContentText align='center'>
+                            Select OK to continue editing.
+                          </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                          <Button variant='contained' color='primary' onClick={closeErrorDialog}>
+                            <Typography variant='button'>OK</Typography>
                           </Button>
                         </DialogActions>
                       </Dialog>
@@ -118,6 +196,7 @@ const EditDrs = (props) => {
                   submitRequestUrl={requestUrl}
                   submitRequestMethod={'PUT'}
                   updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                  apiRequest={props.apiRequest}
               />
           </Container>
       </div>

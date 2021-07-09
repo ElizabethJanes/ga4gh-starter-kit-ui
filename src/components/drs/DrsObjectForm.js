@@ -1,5 +1,5 @@
 import '@fontsource/roboto';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { 
     Typography, 
     FormControl,
@@ -50,10 +50,12 @@ const AddPropertyButton = (props) => {
             <Grid container>
                 <Grid item>
                     <Tooltip title={`Add another ${props.objectName}.`}>
-                        <IconButton color='primary' onClick={props.handleClick} disabled={props.disabled}>
-                            <AddCircleIcon/>
-                        </IconButton>   
-                    </Tooltip>    
+                        <span>
+                            <IconButton color='primary' onClick={props.handleClick} disabled={props.disabled}>
+                                <AddCircleIcon/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </Grid>
             </Grid>
         );
@@ -92,9 +94,9 @@ const BundleBlobRadio = (props) => {
     if(!props.readOnlyForm) {
         return(
             <FormGroup>
-                <Typography align='left' variant='h6'>Is this DRS Object a bundle or a blob?</Typography>
+                <Typography align='left' variant='h6'>Is this DRS Object a Bundle or a Blob?</Typography>
                 <Typography variant='body2' align='left' color='textSecondary'>
-                    Bundles contain references to Child Drs Objects, while Blobs act as single DRS Objects and do not have any children.
+                    Bundles contain references to Child DRS Objects, while Blobs act as single DRS Objects and do not have any children.
                 </Typography>
                 <RadioGroup name='drs_object_type' value={value} onChange={(event) => props.drsObjectFunctions.updateDrsObjectType(event.target.value)}>
                     <FormControlLabel control={<Radio color='primary'/>} label='Blob' value='blob' disabled={props.disabled}/>
@@ -112,7 +114,7 @@ const GenerateIdButton = (props) => {
         return(
             <Grid item xs={2} align='right'>
                 <Button variant='contained' color='primary' 
-                onClick={() =>  props.drsObjectFunctions.updateId(uuidv4())}>
+                onClick={() => props.drsObjectFunctions.updateScalarProperty('id', uuidv4())}>
                     <Typography variant='button'>Generate ID</Typography>
                 </Button>
             </Grid>     
@@ -128,7 +130,7 @@ const Id = (props) => {
                 <FormControl fullWidth>
                     <TextField id='id' label='Id' margin='normal' name='id' type='text'
                     value={props.activeDrsObject.id} InputProps={{readOnly: props.readOnlyId}} 
-                    onChange={(event) => props.drsObjectFunctions.updateId(event.target.value)}
+                    onChange={(event) => props.drsObjectFunctions.updateScalarProperty('id', event.target.value)}
                     helperText='Unique identifier for this DRS Object (UUID recommended), cannot be modified later.'/>
                 </FormControl>
             </Grid>
@@ -189,7 +191,7 @@ const MimeType = (props) => {
             <Grid item xs={4}>
                 <FormControl fullWidth>
                     <TextField id='mime_type' label='MIME Type' margin='normal' name='mime_type' type='text' value={props.mimeType}
-                    InputProps={{readOnly: props.readOnlyForm}} helperText='The media type of the DRS Object' 
+                    InputProps={{readOnly: props.readOnlyForm}} helperText='The media type of the DRS Object.' 
                     onChange={(event) => props.drsObjectFunctions.updateScalarProperty(event.target.name, event.target.value)} />
                 </FormControl>    
             </Grid>
@@ -229,19 +231,20 @@ const Aliases = (props) => {
         }
         const aliasesDisplay = aliases.map((alias, index) => {
             return (
-                <Grid item key={`alias${index}`}>
+                <Grid item xs={4} key={`alias${index}`}>
                     <FormGroup row>
-                        <FormControl>
+                        <Grid item xs={11}>
                             <TextField variant='outlined' id={`alias${index}`} margin='normal' name='alias' label='Alias' type='text' 
-                            value={alias} InputProps={{readOnly: props.readOnlyForm}} 
-                            onChange={(event) => props.drsObjectFunctions.updateAlias(index, event.target.value)}/>
-                        </FormControl>
-                        <Box zIndex={1} position='relative' right='10%' top={-10}>
-                            <RemovePropertyButton index={index} objectName='alias' readOnlyForm={props.readOnlyForm}
-                            handleClick={(index) => props.drsObjectFunctions.removeAlias(index)}/>    
-                        </Box>    
+                                value={alias} InputProps={{readOnly: props.readOnlyForm}} fullWidth
+                                onChange={(event) => props.drsObjectFunctions.updateAlias(index, event.target.value)}/>  
+                        </Grid>
+                        <Grid item xs={1}>
+                            <Box zIndex={1} position='relative' right='75%' top={-10}>
+                                <RemovePropertyButton index={index} objectName='alias' readOnlyForm={props.readOnlyForm}
+                                handleClick={(index) => props.drsObjectFunctions.removeAlias(index)}/>    
+                            </Box>     
+                        </Grid>
                     </FormGroup>
-                    
                 </Grid>
             );  
         })
@@ -288,7 +291,7 @@ const Checksums = (props) => {
             return (
                 <FormGroup key={`checksum${index}`} row>
                     <Grid container spacing={4}>
-                        <Grid item xs={3}>
+                        <Grid item xs={4}>
                             <FormControl fullWidth>
                                 <TextField select variant='outlined' id={`ChecksumType${index}`} label='Type' name='type' type='text' align='left' 
                                 value={checksum.type} InputProps={{readOnly: props.readOnlyForm}} helperText='Hashing algorithm used to generate the checksum.' 
@@ -342,8 +345,8 @@ If the ID has been verified and is invalid, a red "X" icon will be displayed and
 If the ID has not been verified, or has been edited since being verified, the "Verify" button is displayed.
 If the ID field is empty, the "Verify" button is displayed and disabled. */
 const VerifyIdButton = (props) => {
-    const [objectId, setId] = useState(''); //objectId holds the value that is passed to the UseDrsStarterKit hook to make the API request
     let id = props.relatedDrsObject.id; //id holds the current state of relatedDrsObject.id which is the the value displayed and updated in the id field
+    const [objectId, setId] = useState(id); //objectId holds the value that is passed to the UseDrsStarterKit hook to make the API request
     let disabled = false;
     const cancelToken = axios.CancelToken;
     const drsCancelToken = cancelToken.source();
@@ -368,16 +371,16 @@ const VerifyIdButton = (props) => {
             relatedObject.isValid = true;
         }
         relatedObjectsList[props.index] = relatedObject;
+        activeDrsObject.validRelatedDrsObjects = props.drsObjectFunctions.getRelatedDrsValidation(activeDrsObject);
         props.drsObjectFunctions.setActiveDrsObject(activeDrsObject);
-        props.drsObjectFunctions.updateValidRelatedDrsObjects(props.property);
     }
 
     const handleError = (error) => {
         relatedObject.name = '';
         relatedObject.isValid = false;
         relatedObjectsList[props.index] = relatedObject;
+        activeDrsObject.validRelatedDrsObjects = props.drsObjectFunctions.getRelatedDrsValidation(activeDrsObject);
         props.drsObjectFunctions.setActiveDrsObject(activeDrsObject);
-        props.drsObjectFunctions.updateValidRelatedDrsObjects(props.property);
     }
     
     /* UseDrsStarterKit hook is used to make the API GET request to retrieve the related DRS Object information. The hook is called when the 
@@ -387,7 +390,16 @@ const VerifyIdButton = (props) => {
     value changes), a new API GET request is made to determine if the new objectId is valid. Although the id property is updated whenever the 
     textfield is edited, objectId is only updated when the "Verify" button is clicked. Therefore, the GET request is made when the "Verify" 
     button is clicked, resulting in validation of the updated objectId. */
-    UseDrsStarterKit(requestConfig, handleResponse, handleError, objectId, drsCancelToken);
+    //UseDrsStarterKit(requestConfig, handleResponse, handleError, objectId, drsCancelToken);
+    useEffect(() => {
+        if(!props.readOnlyForm && objectId) {
+            console.log('verify id button: ' + objectId);
+            props.apiRequest(requestConfig, handleResponse, handleError);    
+        }
+        return () => {
+          drsCancelToken.cancel('Cleanup API Request');
+        };
+    }, [objectId]);
 
     if(id === '') {
         disabled = true;
@@ -430,7 +442,8 @@ const RelatedDrsObjectButton = (props) => {
             <RemovePropertyButton objectName={props.objectName} index={props.index} readOnlyForm={props.readOnlyForm}
             handleClick={(index) => {
                 props.drsObjectFunctions.removeListItem(props.relationship, index);
-                props.drsObjectFunctions.updateValidRelatedDrsObjects(props.relationship);
+                props.activeDrsObject.validRelatedDrsObjects = props.drsObjectFunctions.getRelatedDrsValidation(props.activeDrsObject);
+                props.drsObjectFunctions.setActiveDrsObject(props.activeDrsObject);
             }}/>
         );
     }
@@ -457,15 +470,6 @@ const RelatedDrsObject = (props) => {
     else if(!props.readOnlyForm && props.relationship === 'drs_object_children' && !props.isBundle) {
         return null;
     }
-    /* if(props.relationship === 'drs_object_children' && !props.isBundle) {
-        return null;
-    }
-    else if(props.relationship === 'drs_object_children' && props.readOnlyForm && !props.relatedDrsObjects) {
-        return null;
-    }
-    else if(props.relationship === 'drs_object_parents' && !props.relatedDrsObjects){
-        return null;
-    } */
     else {
         if(!props.relatedDrsObjects) {
             return null;
@@ -493,7 +497,8 @@ const RelatedDrsObject = (props) => {
                                                 readOnlyForm={props.readOnlyForm} 
                                                 drsObjectFunctions={props.drsObjectFunctions} 
                                                 index={index} 
-                                                property={props.relationship}/>
+                                                property={props.relationship}
+                                                apiRequest={props.apiRequest}/>
                                             </InputAdornment>
                                     }
                                 } >
@@ -507,7 +512,7 @@ const RelatedDrsObject = (props) => {
                                 value={relatedDrs.name} InputProps={{readOnly: true}}/>                            
                             </FormControl>
                         </Grid>
-                        <RelatedDrsObjectButton relatedDrs={relatedDrs} readOnlyForm={props.readOnlyForm} index={index} 
+                        <RelatedDrsObjectButton relatedDrs={relatedDrs} readOnlyForm={props.readOnlyForm} index={index} activeDrsObject={props.activeDrsObject}
                         drsObjectFunctions={props.drsObjectFunctions} objectName={props.objectName} relationship={props.relationship}/>
                     </Grid>
                 </FormGroup>
@@ -675,19 +680,20 @@ const ErrorMessage = (props) => {
 }
 
 const InvalidDrsObjectMessage = (props) => {
-    if(props.validId && props.validRelatedDrs) {
+    if(props.id && props.validRelatedDrs) {
         return null;
     }
     else {
         return( 
-            <Box pb={4} px={20}>
-                <Typography align='center' color='secondary' variant='h6'>This DRS Object is invalid.</Typography>
+            <Box pb={4} px={35}>
+                <Typography align='center' color='secondary' variant='h6'>
+                    This DRS Object is invalid.
+                </Typography>
                 <Typography align='center' color='secondary'>
                     Please ensure that the DRS Object has a unique ID 
                     and that all Parent Bundles and Bundle Children are 
-                    valid. Note that blob-type DRS Objects that do not 
-                    have Bundle Children cannot be set as Parent Bundles 
-                    for this DRS Object.
+                    valid. Note that blob-type DRS Objects cannot be set 
+                    as Parent Bundles.
                 </Typography>
             </Box>
         );
@@ -721,7 +727,7 @@ const SubmitButton = (props) => {
     const relatedDrsObjects = (property) => {
         let relatedDrsObjects = [];
         if(activeDrsObject[property]) {
-            activeDrsObject[property].map((relatedDrs) => {
+            activeDrsObject[property].forEach((relatedDrs) => {
                 if(relatedDrs.isValid) {
                     let relatedDrsObject = {
                         id: relatedDrs.id
@@ -739,19 +745,19 @@ const SubmitButton = (props) => {
             is_bundle: activeDrsObject.is_bundle
         };
 
-        scalarProperties.map((property) => {
+        scalarProperties.forEach((property) => {
             if(activeDrsObject[property]) {
                 newDrsObject[property] = activeDrsObject[property];
             }
         })
 
         if(!activeDrsObject.is_bundle) {
-            blobScalarProperties.map((property) => {
+            blobScalarProperties.forEach((property) => {
                 if(activeDrsObject[property]) {
                     newDrsObject[property] = activeDrsObject[property];
                 }
             })
-            blobListProperties.map((property) => {
+            blobListProperties.forEach((property) => {
                 if(activeDrsObject[property] && Object.keys(activeDrsObject[property]).length > 0) {
                     if(property === 'drs_object_parents') {
                         newDrsObject[property] = relatedDrsObjects(property);
@@ -763,7 +769,7 @@ const SubmitButton = (props) => {
             })
         }
         else { 
-            bundleListProperties.map((property) => {
+            bundleListProperties.forEach((property) => {
                 if(activeDrsObject[property] && Object.keys(activeDrsObject[property]).length > 0) {
                     if(property === 'aliases') {
                         newDrsObject[property] = activeDrsObject[property];
@@ -788,7 +794,7 @@ const SubmitButton = (props) => {
     }
 
     let submitButtonDisabled = false;
-    if(!activeDrsObject.validId || !activeDrsObject.validRelatedDrsObjects) {
+    if(!activeDrsObject.id || !activeDrsObject.validRelatedDrsObjects) {
         submitButtonDisabled = true;
     } 
     else {
@@ -806,12 +812,12 @@ const SubmitButton = (props) => {
             <FormControl fullWidth>
                 <SpaceDivider/>
                 <ErrorMessage error={error} />
-                <InvalidDrsObjectMessage validId={activeDrsObject.validId} validRelatedDrs={activeDrsObject.validRelatedDrsObjects}/>
+                <InvalidDrsObjectMessage id={activeDrsObject.id} validRelatedDrs={activeDrsObject.validRelatedDrsObjects}/>
                 <Button variant='contained' color='primary' disabled={submitButtonDisabled}
                 onClick={() => 
                 {
                     let newDrsObject = getNewDrsObject();
-                    if(!error && activeDrsObject.validId && activeDrsObject.validRelatedDrsObjects) {
+                    if(!error && activeDrsObject.id && activeDrsObject.validRelatedDrsObjects) {
                         setNewDrsObjectToSubmit(newDrsObject);
                     }
                 }}>
@@ -876,7 +882,7 @@ const DrsObjectForm = (props) => {
                 drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}/>
                 <RelatedDrsObject relatedDrsObjects={activeDrsObject.drs_object_children} isBundle={isBundle} relationship='drs_object_children'
                 activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} header='Bundle Children' objectName='child bundle'
-                drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}
+                drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties} apiRequest={props.apiRequest}
                 sectionDescription={
                     <div>
                         <Typography variant='body2' align='left' color='textSecondary'>
@@ -895,19 +901,19 @@ const DrsObjectForm = (props) => {
                 }/>
                 <RelatedDrsObject relatedDrsObjects={activeDrsObject.drs_object_parents} isBundle={isBundle} relationship='drs_object_parents'
                 activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} header='Parent Bundles' objectName='parent bundle'
-                drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}
+                drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties} apiRequest={props.apiRequest}
                 sectionDescription={
                     <Typography variant='body2' align='left' color='textSecondary'>
                         The following listing displays all "Parent" DRS Bundles,
                         that is, all bundles that contain the current DRS Object as
-                        one of its Children.
+                        one of its children.
                     </Typography>
                 }/>
                 <AccessPoints activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} isBundle={isBundle}
                 drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}/>
                 <SubmitButton activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} 
                 drsObjectFunctions={props.drsObjectFunctions} updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
-                submitRequestUrl={props.submitRequestUrl} submitRequestMethod={props.submitRequestMethod}/>
+                submitRequestUrl={props.submitRequestUrl} submitRequestMethod={props.submitRequestMethod} apiRequest={props.apiRequest}/>
             </form>
         </Box>
       </div>
