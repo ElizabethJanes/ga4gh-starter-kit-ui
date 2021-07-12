@@ -17,7 +17,6 @@ import EditIcon from '@material-ui/icons/Edit';
 
 const DrsShow = (props) => {
   let activeDrsObject = props.activeDrsObject;
-  let setChecksumTypes = props.drsObjectFunctions.setChecksumTypes;
   let { objectId } = useParams();
   let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
   let requestUrl=(baseUrl+'objects/'+objectId);
@@ -33,13 +32,11 @@ const DrsShow = (props) => {
 
   const handleResponse = (drsObject) => {
     let updatedDrsObject = props.drsObjectFunctions.setChecksumTypes(drsObject);
-    console.log(updatedDrsObject);
     props.drsObjectFunctions.setActiveDrsObject(updatedDrsObject);
   }
 
   useEffect(() => {
     if(objectId){
-      console.log('make api request');
       props.apiRequest(requestConfig, handleResponse, props.handleError);
     }
     return () => {

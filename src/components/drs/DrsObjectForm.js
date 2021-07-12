@@ -391,7 +391,6 @@ const VerifyIdButton = (props) => {
     resulting in validation of the updated objectId. */
     useEffect(() => {
         if(!props.readOnlyForm && objectId) {
-            console.log('verify id button: ' + objectId);
             props.apiRequest(requestConfig, handleResponse, handleError);    
         }
         return () => {
