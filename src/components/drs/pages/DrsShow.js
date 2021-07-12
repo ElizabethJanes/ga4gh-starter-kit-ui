@@ -13,7 +13,6 @@ import {
 } from "react-router-dom";
 import axios from 'axios';
 import DrsObjectForm from '../DrsObjectForm';
-import UseDrsStarterKit from '../UseDrsStarterKit';
 import EditIcon from '@material-ui/icons/Edit';
 
 const DrsShow = (props) => {
@@ -32,7 +31,21 @@ const DrsShow = (props) => {
     cancelToken: drsCancelToken.token
   };
 
-  UseDrsStarterKit(requestConfig, setChecksumTypes, props.handleError, objectId, drsCancelToken);
+  const handleResponse = (drsObject) => {
+    let updatedDrsObject = props.drsObjectFunctions.setChecksumTypes(drsObject);
+    console.log(updatedDrsObject);
+    props.drsObjectFunctions.setActiveDrsObject(updatedDrsObject);
+  }
+
+  useEffect(() => {
+    if(objectId){
+      console.log('make api request');
+      props.apiRequest(requestConfig, handleResponse, props.handleError);
+    }
+    return () => {
+      drsCancelToken.cancel('Cleanup API Request');
+    };
+  }, [objectId]);
 
   /* Restore scroll to top of page on navigation to a new page */
   const { pathname }  = useLocation();

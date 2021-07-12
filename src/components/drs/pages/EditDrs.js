@@ -19,8 +19,6 @@ import {
 } from "react-router-dom";
 import axios from 'axios';
 import DrsObjectForm from '../DrsObjectForm';
-import UseDrsStarterKit from '../UseDrsStarterKit';
-import { format } from 'date-fns';
 
 const EditDrs = (props) => {
   console.log(props.activeDrsObject);
@@ -48,47 +46,12 @@ const EditDrs = (props) => {
     props.drsObjectFunctions.setActiveDrsObject(editableDrsObject);
   }
 
-  /* UseDrsStarterKit hook makes GET request when path changes to EditDrs page */
-  //UseDrsStarterKit(getRequestConfig, handleResponse, props.handleError, objectId, drsCancelToken);
+  /* useEffect hook makes GET request when EditDrs page is rendered.
+  First the activeDrsObject is reset. Then, using the URL parameters to find the objectId, 
+  the GET request is made. The GET response is handled through the handleResponse function, 
+  which populates the editable form and updates the activeDrsObject. */
   useEffect(() => {
-    let newDate = new Date();
-    newDate.setSeconds(0, 0);
-    let year = newDate.getUTCFullYear();
-    let month = newDate.getUTCMonth();
-    let date = newDate.getUTCDate();
-    let hours = newDate.getUTCHours();
-    let minutes = newDate.getUTCMinutes();
-    let seconds = newDate.getUTCSeconds();
-    let temporaryDrs = {
-      id: '',
-      description: '',
-      created_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-      mime_type: '',
-      name: '',
-      size: '',
-      updated_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-      version: '',
-      aliases: [],
-      checksums: [],
-      drs_object_children: [],
-      drs_object_parents: [],
-      file_access_objects: [],
-      aws_s3_access_objects: [],
-      is_bundle: false,
-      checksumTypes: {
-        md5: {
-          disabled: false
-        },
-        sha1: {
-          disabled: false
-        },
-        sha256: {
-          disabled: false
-        }
-      },
-      validRelatedDrsObjects: true
-    }
-    props.drsObjectFunctions.setActiveDrsObject(temporaryDrs);
+    props.drsObjectFunctions.resetActiveDrsObject();
     if(objectId){
       props.apiRequest(getRequestConfig, handleResponse, props.handleError);
     }
@@ -108,7 +71,7 @@ const EditDrs = (props) => {
 
   const handleDeleteResponse = (response)  => {
     setObjectIdToDelete(null);
-    props.updateSubmitNewDrsRedirect(true);
+    props.updateSubmitDrsRedirect(true);
   }
 
   /* Error dialog  */
@@ -131,8 +94,15 @@ const EditDrs = (props) => {
     setConfirmationDialogIsOpen(false);
   }
 
-  /* UseDrsStarterKit hook makes DELETE request when objectIdToDelete is set by clicking "Delete" button in confirmation dialog */
-  UseDrsStarterKit(deleteRequestConfig, handleDeleteResponse, handleDeleteError, objectIdToDelete, drsCancelToken);
+  /* useEffect hook makes DELETE request when objectIdToDelete is set by clicking "Delete" button in confirmation dialog */
+  useEffect(() => {
+    if(objectIdToDelete){
+      props.apiRequest(deleteRequestConfig, handleDeleteResponse, handleDeleteError);
+    }
+    return () => {
+      drsCancelToken.cancel('Cleanup API Request');
+    };
+  }, [objectIdToDelete]);
 
   /* Render EditDrs page */
   return (
@@ -195,7 +165,7 @@ const EditDrs = (props) => {
                   drsObjectProperties={props.drsObjectProperties}
                   submitRequestUrl={requestUrl}
                   submitRequestMethod={'PUT'}
-                  updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                  updateSubmitDrsRedirect={props.updateSubmitDrsRedirect}
                   apiRequest={props.apiRequest}
               />
           </Container>

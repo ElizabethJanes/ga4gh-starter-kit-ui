@@ -32,7 +32,6 @@ import DateFnsUtils from '@date-io/date-fns';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-import UseDrsStarterKit from './UseDrsStarterKit';
 
 const SpaceDivider = () => {
     return (
@@ -346,7 +345,7 @@ If the ID has not been verified, or has been edited since being verified, the "V
 If the ID field is empty, the "Verify" button is displayed and disabled. */
 const VerifyIdButton = (props) => {
     let id = props.relatedDrsObject.id; //id holds the current state of relatedDrsObject.id which is the the value displayed and updated in the id field
-    const [objectId, setId] = useState(id); //objectId holds the value that is passed to the UseDrsStarterKit hook to make the API request
+    const [objectId, setId] = useState(id); //objectId holds the value that is passed to the useEffect hook to make the API request
     let disabled = false;
     const cancelToken = axios.CancelToken;
     const drsCancelToken = cancelToken.source();
@@ -383,14 +382,13 @@ const VerifyIdButton = (props) => {
         props.drsObjectFunctions.setActiveDrsObject(activeDrsObject);
     }
     
-    /* UseDrsStarterKit hook is used to make the API GET request to retrieve the related DRS Object information. The hook is called when the 
-    VerifyIdButton component is rendered and passes objectId to determine if it is valid. Prior to clicking the "Verify" button for the first 
-    time, objectId is an empty string, and therefore the GET request is not made. When the "Verify" button is clicked, the ObjectId property 
-    is updated to the value currently entered in the text field. When objectId is updated (when the "Verify" button is clicked and the objectId 
-    value changes), a new API GET request is made to determine if the new objectId is valid. Although the id property is updated whenever the 
-    textfield is edited, objectId is only updated when the "Verify" button is clicked. Therefore, the GET request is made when the "Verify" 
-    button is clicked, resulting in validation of the updated objectId. */
-    //UseDrsStarterKit(requestConfig, handleResponse, handleError, objectId, drsCancelToken);
+    /* useEffect hook is used to make the API GET request to retrieve the related DRS Object information. The hook is called when the 
+    VerifyIdButton component is rendered. Prior to clicking the "Verify" button for the first time, objectId is an empty string, and 
+    therefore the GET request is not made. When the "Verify" button is clicked, the objectId property is updated to the value currently 
+    entered in the text field. When objectId is updated (when the "Verify" button is clicked and the objectId value changes), a new API 
+    GET request is made to determine if the new objectId is valid. Although the id property is updated whenever the textfield is edited, 
+    objectId is only updated when the "Verify" button is clicked. Therefore, the GET request is made when the "Verify" button is clicked, 
+    resulting in validation of the updated objectId. */
     useEffect(() => {
         if(!props.readOnlyForm && objectId) {
             console.log('verify id button: ' + objectId);
@@ -785,7 +783,7 @@ const SubmitButton = (props) => {
 
     const handleResponse = (response) => {
         console.log(response);
-        props.updateSubmitNewDrsRedirect(true);
+        props.updateSubmitDrsRedirect(true);
     }
 
     const handleError = (error) => {
@@ -801,11 +799,21 @@ const SubmitButton = (props) => {
         submitButtonDisabled = false;
     }
 
-    /* UseDrsStarterKit hook is used to make API POST request. The hook is called when the SubmitButton component is rendered and passes the 
-    newDrsObjectToSubmit object within the request body. Prior to clicking the "Submit" button for the first time, newDrsObjectToSubmit is an 
-    empty object, and therefore the POST request is not made. When the "Submit" button is clicked, the newDrsObjectToSubmit property is updated, 
-    resulting in the POST request being made. */
-    UseDrsStarterKit(requestConfig, handleResponse, handleError, newDrsObjectToSubmit.id, newDrsCancelToken);
+    /* useEffect hook is used to make POST and PUT requests. The hook is called when the SubmitButton component is rendered and the POST/PUT 
+    request is made if there is no error, the related DRS Objects are valid, and the new DRS Object has a valid ID. Prior to clicking the 
+    "Submit" button for the first time, newDrsObjectToSubmit is an empty object, and therefore the request is not made. When the "Submit" 
+    button is clicked, the newDrsObjectToSubmit.id property is updated, resulting in the request being made.
+    The request method (POST or PUT) is set in the requestConfig object using props.submitRequestMethod. props.submitRequestMethod is passed 
+    from the NewDrs and EditDrs components, and therefore, the method that is used depends on the page type that is rendered. Similarly, the 
+    request URL is set in the requestConfig object using props.submitRequestUrl, and its value is passed from the NewDrs and EditDrs components. */
+    useEffect(() => {
+        if(!error && newDrsObjectToSubmit.id && activeDrsObject.validRelatedDrsObjects){
+          props.apiRequest(requestConfig, handleResponse, handleError);
+        }
+        return () => {
+          newDrsCancelToken.cancel('Cleanup API Request');
+        };
+      }, [newDrsObjectToSubmit.id]);
 
     if(!props.readOnlyForm) {
         return (
@@ -814,13 +822,7 @@ const SubmitButton = (props) => {
                 <ErrorMessage error={error} />
                 <InvalidDrsObjectMessage id={activeDrsObject.id} validRelatedDrs={activeDrsObject.validRelatedDrsObjects}/>
                 <Button variant='contained' color='primary' disabled={submitButtonDisabled}
-                onClick={() => 
-                {
-                    let newDrsObject = getNewDrsObject();
-                    if(!error && activeDrsObject.id && activeDrsObject.validRelatedDrsObjects) {
-                        setNewDrsObjectToSubmit(newDrsObject);
-                    }
-                }}>
+                onClick={() => setNewDrsObjectToSubmit(getNewDrsObject())}>
                     Submit
                 </Button>
             </FormControl>
@@ -912,7 +914,7 @@ const DrsObjectForm = (props) => {
                 <AccessPoints activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} isBundle={isBundle}
                 drsObjectFunctions={props.drsObjectFunctions} drsObjectProperties={props.drsObjectProperties}/>
                 <SubmitButton activeDrsObject={activeDrsObject} readOnlyForm={readOnlyForm} 
-                drsObjectFunctions={props.drsObjectFunctions} updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                drsObjectFunctions={props.drsObjectFunctions} updateSubmitDrsRedirect={props.updateSubmitDrsRedirect}
                 submitRequestUrl={props.submitRequestUrl} submitRequestMethod={props.submitRequestMethod} apiRequest={props.apiRequest}/>
             </form>
         </Box>

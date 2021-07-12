@@ -10,7 +10,6 @@ import DrsObjectForm from '../DrsObjectForm';
 import {
     Link
 } from "react-router-dom";
-import { format } from 'date-fns';
 
 const NewDrs = (props) => {
     let activeDrsObject = props.activeDrsObject;
@@ -20,44 +19,7 @@ const NewDrs = (props) => {
 
     /* Upon rendering the NewDrs page, reset the activeDrsObject with useEffect hook */
     useEffect(() => {
-        let newDate = new Date();
-        newDate.setSeconds(0, 0);
-        let year = newDate.getUTCFullYear();
-        let month = newDate.getUTCMonth();
-        let date = newDate.getUTCDate();
-        let hours = newDate.getUTCHours();
-        let minutes = newDate.getUTCMinutes();
-        let seconds = newDate.getUTCSeconds();
-        let newDrsObject = {
-            id: '',
-            description: '',
-            created_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-            mime_type: '',
-            name: '',
-            size: '',
-            updated_time: format(new Date(year, month, date, hours, minutes, seconds), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
-            version: '',
-            aliases: [],
-            checksums: [],
-            drs_object_children: [],
-            drs_object_parents: [],
-            file_access_objects: [],
-            aws_s3_access_objects: [],
-            is_bundle: false,
-            checksumTypes: {
-            md5: {
-                disabled: false
-            },
-            sha1: {
-                disabled: false
-            },
-            sha256: {
-                disabled: false
-            }
-            },
-            validRelatedDrsObjects: true
-        }
-        props.drsObjectFunctions.setActiveDrsObject(newDrsObject);
+        props.drsObjectFunctions.resetActiveDrsObject();
     }, [])
 
     /* Render NewDrs page */
@@ -88,7 +50,7 @@ const NewDrs = (props) => {
                     drsObjectProperties={props.drsObjectProperties}
                     submitRequestUrl={requestUrl}
                     submitRequestMethod={'POST'}
-                    updateSubmitNewDrsRedirect={props.updateSubmitNewDrsRedirect}
+                    updateSubmitDrsRedirect={props.updateSubmitDrsRedirect}
                     apiRequest={props.apiRequest}
                 />
             </Container>
