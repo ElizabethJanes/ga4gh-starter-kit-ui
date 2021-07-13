@@ -131,7 +131,7 @@ class Drs extends React.Component {
   } 
 
   getDrsObjectsList = async () => {
-    let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
+    let baseUrl = process.env.REACT_APP_DRS_ADMIN_ENDPOINT;
     let requestUrl=(baseUrl+'objects');
     await axios({
       url: requestUrl, 

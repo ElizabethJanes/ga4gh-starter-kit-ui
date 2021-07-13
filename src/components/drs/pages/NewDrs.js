@@ -14,7 +14,7 @@ import {
 const NewDrs = (props) => {
     let activeDrsObject = props.activeDrsObject;
     console.log(activeDrsObject);
-    let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
+    let baseUrl = process.env.REACT_APP_DRS_ADMIN_ENDPOINT;
     let requestUrl=(baseUrl+'objects');
 
     /* Upon rendering the NewDrs page, reset the activeDrsObject with useEffect hook */

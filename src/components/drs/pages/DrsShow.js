@@ -18,7 +18,7 @@ import EditIcon from '@material-ui/icons/Edit';
 const DrsShow = (props) => {
   let activeDrsObject = props.activeDrsObject;
   let { objectId } = useParams();
-  let baseUrl = 'http://localhost:8080/admin/ga4gh/drs/v1/';
+  let baseUrl = process.env.REACT_APP_DRS_ADMIN_ENDPOINT;
   let requestUrl=(baseUrl+'objects/'+objectId);
   const cancelToken = axios.CancelToken;
   const drsCancelToken = cancelToken.source();
